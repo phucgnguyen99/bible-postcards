@@ -18,6 +18,8 @@ export default function HomePage() {
 
   const [postcards, setPostcards] = useState([]);
 
+  const [editingId, setEditingId] = useState(null);
+
   // Load from localStorage on first render
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -43,6 +45,7 @@ export default function HomePage() {
     }
   }, [postcards]);
 
+  // Update handleSave to support "add" and "edit"
   function handleSave() {
     if (!reference.trim() || !text.trim()) return;
 
@@ -51,29 +54,81 @@ export default function HomePage() {
       .map((t) => t.trim())
       .filter(Boolean);
 
-    const newPostcard = {
-      id: crypto.randomUUID(),
-      reference,
-      text,
-      tags,
-      commentary,
-      personalThoughts,
-      questions,
-      createdAt: new Date().toISOString(),
-    };
+    if (editingId) {
+      // UPDATE existing postcard
+      setPostcards((prev) =>
+        prev.map((pc) =>
+          pc.id === editingId
+            ? {
+                ...pc,
+                reference,
+                text,
+                tags,
+                commentary,
+                personalThoughts,
+                questions,
+                updatedAt: new Date().toISOString(),
+              }
+            : pc
+        )
+      );
+    } else {
+      // CREATE new postcard
+      const newPostcard = {
+        id: crypto.randomUUID(),
+        reference,
+        text,
+        tags,
+        commentary,
+        personalThoughts,
+        questions,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    setPostcards((prev) => [newPostcard, ...prev]);
+      setPostcards((prev) => [newPostcard, ...prev]);
+    }
 
-    // clear inputs
+    // clear inputs & exit edit mode
     setReference("");
     setText("");
     setTagsInput("");
     setCommentary("");
     setPersonalThoughts("");
     setQuestions("");
+    setEditingId(null);
   }
 
-    async function handleFetchVerse() {
+  function handleEdit(postcard) {
+    setEditingId(postcard.id);
+    setReference(postcard.reference);
+    setText(postcard.text);
+    setTagsInput(postcard.tags?.join(", ") || "");
+    setCommentary(postcard.commentary || "");
+    setPersonalThoughts(postcard.personalThoughts || "");
+    setQuestions(postcard.questions || "");
+    // scroll to top so the form is visible (optional)
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  function handleDelete(id) {
+    if (!confirm("Delete this postcard?")) return;
+    setPostcards((prev) => prev.filter((pc) => pc.id !== id));
+    // if you were editing this one, reset form
+    if (editingId === id) {
+      setEditingId(null);
+      setReference("");
+      setText("");
+      setTagsInput("");
+      setCommentary("");
+      setPersonalThoughts("");
+      setQuestions("");
+    }
+  }
+
+  async function handleFetchVerse() {
     if (!reference.trim()) return;
 
     setIsFetching(true);
@@ -198,7 +253,7 @@ export default function HomePage() {
             disabled={!reference.trim() || !text.trim()}
             className="px-4 py-2 text-sm rounded bg-black text-white disabled:opacity-50"
           >
-            Save postcard
+            {editingId ? "Update postcard" : "Save postcard"}
           </button>
         </div>
 
@@ -212,48 +267,65 @@ export default function HomePage() {
             </p>
           )}
 
-          <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-2">
             {postcards.map((pc) => (
               <div
                 key={pc.id}
-                className="rounded-2xl border bg-gradient-to-br from-amber-50 via-white to-sky-50 p-3 shadow-sm"
+                className="rounded-2xl border bg-gradient-to-br from-amber-50 via-white to-sky-50 p-3 shadow-sm flex flex-col justify-between"
               >
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-semibold text-sm">{pc.reference}</h3>
-                  <span className="text-[10px] text-gray-400">
-                    {new Date(pc.createdAt).toLocaleDateString()}
-                  </span>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-semibold text-sm">{pc.reference}</h3>
+                    <span className="text-[10px] text-gray-400">
+                      {new Date(pc.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-gray-700 whitespace-pre-wrap mb-2">
+                    {pc.text}
+                  </p>
+
+                  {pc.tags?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {pc.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-[10px] px-2 py-0.5 rounded-full bg-white/80 text-gray-700 border border-gray-100"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {pc.personalThoughts && (
+                    <p className="text-[11px] text-gray-600 italic mb-1">
+                      {pc.personalThoughts}
+                    </p>
+                  )}
+
+                  {pc.commentary && (
+                    <p className="text-[10px] text-gray-500">
+                      <span className="font-semibold">Note: </span>
+                      {pc.commentary}
+                    </p>
+                  )}
                 </div>
 
-                <p className="text-xs text-gray-700 whitespace-pre-wrap mb-2">
-                  {pc.text}
-                </p>
-
-                {pc.tags?.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {pc.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-white/80 text-gray-700 border border-gray-100"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {pc.personalThoughts && (
-                  <p className="text-[11px] text-gray-600 italic mb-1">
-                    {pc.personalThoughts}
-                  </p>
-                )}
-
-                {pc.commentary && (
-                  <p className="text-[10px] text-gray-500">
-                    <span className="font-semibold">Note: </span>
-                    {pc.commentary}
-                  </p>
-                )}
+                <div className="mt-3 flex justify-end gap-2">
+                  <button
+                    onClick={() => handleEdit(pc)}
+                    className="text-[11px] px-2 py-1 border rounded bg-white hover:bg-gray-50"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(pc.id)}
+                    className="text-[11px] px-2 py-1 border rounded bg-red-50 text-red-600 hover:bg-red-100"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
