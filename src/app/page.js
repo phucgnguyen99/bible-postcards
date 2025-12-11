@@ -5,6 +5,9 @@ import { useState, useEffect } from "react";
 const STORAGE_KEY = "bible_postcards";
 
 export default function HomePage() {
+  const [isFetching, setIsFetching] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
+
   const [reference, setReference] = useState("");
   const [text, setText] = useState("");
 
@@ -70,6 +73,35 @@ export default function HomePage() {
     setQuestions("");
   }
 
+    async function handleFetchVerse() {
+    if (!reference.trim()) return;
+
+    setIsFetching(true);
+    setFetchError(null);
+
+    try {
+      const res = await fetch("/api/verses/fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to fetch verse");
+      }
+
+      // Fill the verse text with what the API returned
+      setText(data.text || "");
+    } catch (err) {
+      console.error(err);
+      setFetchError(err.message || "Something went wrong");
+    } finally {
+      setIsFetching(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="max-w-3xl mx-auto px-4 py-8">
@@ -80,16 +112,29 @@ export default function HomePage() {
 
         {/* Verse + notes form */}
         <div className="space-y-3 border rounded-lg bg-white p-4 shadow-sm">
-          <div>
+                    <div>
             <label className="block text-xs font-medium mb-1">
               Verse reference
             </label>
-            <input
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              placeholder='e.g. "John 3:16"'
-              className="w-full border rounded px-3 py-2 text-sm"
-            />
+            <div className="flex gap-2">
+              <input
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+                placeholder='e.g. "John 3:16"'
+                className="flex-1 border rounded px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleFetchVerse}
+                disabled={!reference.trim() || isFetching}
+                className="px-3 py-2 text-xs rounded border bg-white hover:bg-gray-50 disabled:opacity-50"
+              >
+                {isFetching ? "Fetching..." : "Fetch verse"}
+              </button>
+            </div>
+            {fetchError && (
+              <p className="text-[11px] text-red-500 mt-1">{fetchError}</p>
+            )}
           </div>
 
           <div>
