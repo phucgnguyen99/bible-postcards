@@ -20,6 +20,10 @@ export default function HomePage() {
 
   const [editingId, setEditingId] = useState(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState(null);
+
+
   // Load from localStorage on first render
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -157,6 +161,36 @@ export default function HomePage() {
     }
   }
 
+  const allTags = Array.from(
+    new Set(
+      postcards.flatMap((pc) => pc.tags || [])
+    )
+  ).sort();
+
+  const filteredPostcards = postcards.filter((pc) => {
+    // filter by tag
+    if (selectedTag && !(pc.tags || []).includes(selectedTag)) {
+      return false;
+    }
+
+    // filter by search
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+
+    const combined = [
+      pc.reference,
+      pc.text,
+      pc.commentary,
+      pc.personalThoughts,
+      pc.questions,
+      (pc.tags || []).join(" "),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return combined.includes(q);
+  });
+
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="max-w-3xl mx-auto px-4 py-8">
@@ -267,8 +301,60 @@ export default function HomePage() {
             </p>
           )}
 
-                    <div className="grid gap-3 sm:grid-cols-2">
-            {postcards.map((pc) => (
+          {postcards.length > 0 && (
+            <div className="mb-4 space-y-2">
+              {/* Search box */}
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by reference, text, or notes..."
+                className="w-full max-w-sm border rounded px-3 py-1.5 text-xs"
+              />
+
+              {/* Tag filters */}
+              {allTags.length > 0 && (
+                <div className="flex flex-wrap gap-1 items-center">
+                  <span className="text-[11px] text-gray-500 mr-1">
+                    Filter by tag:
+                  </span>
+                  <button
+                    onClick={() => setSelectedTag(null)}
+                    className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                      selectedTag === null
+                        ? "bg-black text-white border-black"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() =>
+                        setSelectedTag((prev) => (prev === tag ? null : tag))
+                      }
+                      className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                        selectedTag === tag
+                          ? "bg-black text-white border-black"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {postcards.length > 0 && filteredPostcards.length === 0 && (
+            <p className="text-xs text-gray-500">
+              No postcards match your search or tag filter.
+            </p>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {filteredPostcards.map((pc) => (
               <div
                 key={pc.id}
                 className="rounded-2xl border bg-gradient-to-br from-amber-50 via-white to-sky-50 p-3 shadow-sm flex flex-col justify-between"
