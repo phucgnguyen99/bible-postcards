@@ -5,15 +5,30 @@ import { useState } from "react";
 export default function HomePage() {
   const [reference, setReference] = useState("");
   const [text, setText] = useState("");
+
+  const [tagsInput, setTagsInput] = useState("");
+  const [commentary, setCommentary] = useState("");
+  const [personalThoughts, setPersonalThoughts] = useState("");
+  const [questions, setQuestions] = useState("");
+
   const [postcards, setPostcards] = useState([]);
 
   function handleSave() {
     if (!reference.trim() || !text.trim()) return;
 
+    const tags = tagsInput
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
     const newPostcard = {
       id: crypto.randomUUID(),
       reference,
       text,
+      tags,
+      commentary,
+      personalThoughts,
+      questions,
       createdAt: new Date().toISOString(),
     };
 
@@ -22,6 +37,10 @@ export default function HomePage() {
     // clear inputs
     setReference("");
     setText("");
+    setTagsInput("");
+    setCommentary("");
+    setPersonalThoughts("");
+    setQuestions("");
   }
 
   return (
@@ -29,10 +48,10 @@ export default function HomePage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-1">BibleVerse Postcards 📬</h1>
         <p className="text-xs text-gray-500 mb-6">
-          Start simple: type a verse reference and its text, then save as a postcard.
+          Step 1: manually type a verse and your reflections, save them as postcards.
         </p>
 
-        {/* Verse form */}
+        {/* Verse + notes form */}
         <div className="space-y-3 border rounded-lg bg-white p-4 shadow-sm">
           <div>
             <label className="block text-xs font-medium mb-1">
@@ -53,8 +72,52 @@ export default function HomePage() {
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Type the verse text here..."
+              placeholder="Type or paste the verse text here..."
               className="w-full border rounded px-3 py-2 text-sm min-h-[80px]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1">
+              Tags (comma separated)
+            </label>
+            <input
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              placeholder="faith, hope, encouragement"
+              className="w-full border rounded px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1">Commentary</label>
+            <textarea
+              value={commentary}
+              onChange={(e) => setCommentary(e.target.value)}
+              placeholder="What does this verse say? Any observations?"
+              className="w-full border rounded px-3 py-2 text-sm min-h-[60px]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1">
+              Personal thoughts
+            </label>
+            <textarea
+              value={personalThoughts}
+              onChange={(e) => setPersonalThoughts(e.target.value)}
+              placeholder="How does this verse speak to your life today?"
+              className="w-full border rounded px-3 py-2 text-sm min-h-[60px]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1">Questions</label>
+            <textarea
+              value={questions}
+              onChange={(e) => setQuestions(e.target.value)}
+              placeholder="What do you want to study or ask about this verse?"
+              className="w-full border rounded px-3 py-2 text-sm min-h-[60px]"
             />
           </div>
 
@@ -81,7 +144,7 @@ export default function HomePage() {
             {postcards.map((pc) => (
               <div
                 key={pc.id}
-                className="rounded-xl border bg-gradient-to-br from-amber-50 via-white to-sky-50 p-3 shadow-sm"
+                className="rounded-2xl border bg-gradient-to-br from-amber-50 via-white to-sky-50 p-3 shadow-sm"
               >
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="font-semibold text-sm">{pc.reference}</h3>
@@ -89,9 +152,36 @@ export default function HomePage() {
                     {new Date(pc.createdAt).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-xs text-gray-700 whitespace-pre-wrap">
+
+                <p className="text-xs text-gray-700 whitespace-pre-wrap mb-2">
                   {pc.text}
                 </p>
+
+                {pc.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {pc.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-white/80 text-gray-700 border border-gray-100"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {pc.personalThoughts && (
+                  <p className="text-[11px] text-gray-600 italic mb-1">
+                    {pc.personalThoughts}
+                  </p>
+                )}
+
+                {pc.commentary && (
+                  <p className="text-[10px] text-gray-500">
+                    <span className="font-semibold">Note: </span>
+                    {pc.commentary}
+                  </p>
+                )}
               </div>
             ))}
           </div>
