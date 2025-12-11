@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const STORAGE_KEY = "bible_postcards";
 
 export default function HomePage() {
   const [reference, setReference] = useState("");
@@ -12,6 +14,31 @@ export default function HomePage() {
   const [questions, setQuestions] = useState("");
 
   const [postcards, setPostcards] = useState([]);
+
+  // Load from localStorage on first render
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setPostcards(JSON.parse(stored));
+      }
+    } catch (err) {
+      console.error("Failed to load postcards from localStorage", err);
+    }
+  }, []);
+
+  // Save to localStorage whenever postcards change
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(postcards));
+    } catch (err) {
+      console.error("Failed to save postcards to localStorage", err);
+    }
+  }, [postcards]);
 
   function handleSave() {
     if (!reference.trim() || !text.trim()) return;
@@ -48,7 +75,7 @@ export default function HomePage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-1">BibleVerse Postcards 📬</h1>
         <p className="text-xs text-gray-500 mb-6">
-          Step 1: manually type a verse and your reflections, save them as postcards.
+          Step 2: postcards are now saved in your browser, even after refresh.
         </p>
 
         {/* Verse + notes form */}
@@ -157,7 +184,7 @@ export default function HomePage() {
                   {pc.text}
                 </p>
 
-                {pc.tags.length > 0 && (
+                {pc.tags?.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-2">
                     {pc.tags.map((tag) => (
                       <span
