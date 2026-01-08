@@ -1,9 +1,10 @@
-// src/app/api/postcards/[id]/route.js
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function PUT(request, { params }) {
-  const { id } = params;
+export const runtime = "nodejs"; // recommended when using Prisma
+
+export async function PUT(request, ctx) {
+  const { id } = await ctx.params; // ✅ await params
   const body = await request.json();
 
   const reference = (body.reference || "").trim();
@@ -33,25 +34,18 @@ export async function PUT(request, { params }) {
     return NextResponse.json(updated);
   } catch (err) {
     console.error("Update postcard error:", err);
-    return NextResponse.json(
-      { error: "Failed to update postcard" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update postcard" }, { status: 500 });
   }
 }
 
-export async function DELETE(_request, { params }) {
-  const { id } = params;
+export async function DELETE(_request, ctx) {
+  const { id } = await ctx.params; // ✅ await params
 
   try {
     await prisma.postcard.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Delete postcard error:", err);
-    return NextResponse.json(
-      { error: "Failed to delete postcard" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to delete postcard" }, { status: 500 });
   }
 }
-
