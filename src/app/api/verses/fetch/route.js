@@ -12,9 +12,7 @@ export async function POST(request) {
     );
   }
 
-  const url = `https://bible-api.com/${encodeURIComponent(
-    reference
-  )}?translation=web`;
+  const url = `https://bible-api.com/${encodeURIComponent(reference)}?translation=web`;
 
   try {
     const res = await fetch(url);
@@ -26,7 +24,6 @@ export async function POST(request) {
     }
 
     const data = await res.json();
-    // data.verses is an array; join all verse texts into a single string
     const mergedText =
       Array.isArray(data.verses)
         ? data.verses.map((v) => v.text).join(" ").trim()
